@@ -72,15 +72,29 @@ class SinDNSQuery:
 class SinDNSAnswer:
         def __init__(self, ip):
                 self.name = 49164
-                self.type = 1
+                if ip.__contains__(':'):
+                        self.type = 28
+                        self.datalength = 16
+                else:
+                        self.type = 1
+                        self.datalength = 4
                 self.classify = 1
                 self.timetolive = 190
-                self.datalength = 4
                 self.ip = ip
         def getbytes(self):
                 res = struct.pack('>HHHLH', self.name, self.type, self.classify, self.timetolive, self.datalength)
-                s = self.ip.split('.')
-                res = res + struct.pack('BBBB', int(s[0]), int(s[1]), int(s[2]), int(s[3]))
+                if self.type == 1:
+                        s = self.ip.split('.')
+                        res = res + struct.pack('BBBB', int(s[0]), int(s[1]), int(s[2]), int(s[3]))
+                else:
+                        s = self.ip.split(':')
+                        ingored = 8 - len(s)
+                        if ingored:
+                                ingored_i = s.index('')
+                                s[ingored_i] = '0'
+                                for i in range(ingored_i,ingored_i+ingored):
+                                        s.insert(ingored_i,'0')
+                        res = res + struct.pack('>HHHHHHHH', int(s[0],base=16), int(s[1],base=16), int(s[2],base=16), int(s[3],base=16), int(s[4],base=16), int(s[5],base=16), int(s[6],base=16), int(s[7],base=16)) 
                 return res
 
 # DNS frame
@@ -217,6 +231,6 @@ if __name__ == "__main__":
         else:
                 f = open('record.txt', 'w')
                 f.close()
-                PrinttoScreen('[Info] Record File Created'%count)
+                PrinttoScreen('[Info] Record File Created')
         sev.start() # start DNS server
 
